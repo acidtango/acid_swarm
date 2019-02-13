@@ -1,0 +1,105 @@
+version: "3.3"
+services:
+  traefik:
+    image: traefik:1.5
+    command:
+      - "--logLevel=DEBUG"
+      - "--api"
+      - "--entrypoints=Name:http Address::80"
+      - "--defaultentrypoints=http"
+      - "--docker"
+      - "--docker.swarmMode"
+      - "--docker.domain=${DOMAIN_NAME}"
+      - "--docker.watch"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - webgateway
+    ports:
+      - 80:80
+    deploy:
+      labels:
+        traefik.enable: 'true'
+        traefik.docker.network: webgateway
+        traefik.frontend.rule: "Host:traefik.${DOMAIN_NAME}"
+        traefik.port: 8080
+      placement:
+        constraints:
+          - node.role == manager
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  swarmpit:
+    image: swarmpit/swarmpit:1.6
+    environment:
+      - SWARMPIT_DB=http://swarmpit_db:5984
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - net
+      - webgateway
+    deploy:
+      labels:
+        traefik.enable: 'true'
+        traefik.docker.network: webgateway
+        traefik.frontend.rule: "Host:swarmpit.${DOMAIN_NAME}"
+        traefik.port: 8080
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 1024M
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+      placement:
+        constraints:
+          - node.role == manager
+
+  swarmpit_db:
+    image: couchdb:2.3.0
+    volumes:
+      - db-data:/opt/couchdb/data
+    networks:
+      - net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.30'
+          memory: 512M
+        reservations:
+          cpus: '0.15'
+          memory: 256M
+
+  swarmpit_agent:
+    image: swarmpit/agent:2.0
+    environment:
+      - EVENT_ENDPOINT=http://swarmpit:8080/events
+      - HEALTH_CHECK_ENDPOINT=http://swarmpit:8080/version
+      - DOCKER_API_VERSION=1.35
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - net
+    deploy:
+      mode: global
+      resources:
+        limits:
+          cpus: '0.10'
+          memory: 64M
+        reservations:
+          cpus: '0.05'
+          memory: 32M
+
+networks:
+  net:
+    driver: overlay
+  webgateway:
+    driver: overlay
+    external: true
+
+volumes:
+  db-data:
+    driver: local
