@@ -32,7 +32,7 @@ services:
         condition: on-failure
 
   swarmpit:
-    image: swarmpit/swarmpit:1.5
+    image: swarmpit/swarmpit:1.5.1
     environment:
       - SWARMPIT_DB=http://swarmpit_db:5984
     volumes:
