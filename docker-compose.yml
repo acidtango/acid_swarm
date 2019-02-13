@@ -3,7 +3,6 @@ services:
   traefik:
     image: traefik:1.7.9
     command:
-      - "--logLevel=DEBUG"
       - "--api"
       - "--entrypoints=Name:http Address::80"
       - "--defaultentrypoints=http"
