@@ -13,13 +13,13 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - webgateway
+      - traefik-net
     ports:
       - 80:80
     deploy:
       labels:
         traefik.enable: 'true'
-        traefik.docker.network: webgateway
+        traefik.docker.network: traefik-net
         traefik.frontend.rule: "Host:traefik.${DOMAIN_NAME}"
         traefik.port: 8080
       placement:
@@ -39,11 +39,11 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - net
-      - webgateway
+      - traefik-net
     deploy:
       labels:
         traefik.enable: 'true'
-        traefik.docker.network: webgateway
+        traefik.docker.network: traefik-net
         traefik.frontend.rule: "Host:swarmpit.${DOMAIN_NAME}"
         traefik.port: 8080
       resources:
@@ -95,7 +95,7 @@ services:
 networks:
   net:
     driver: overlay
-  webgateway:
+  traefik-net:
     driver: overlay
     external: true
 

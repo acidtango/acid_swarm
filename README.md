@@ -15,11 +15,11 @@ to deploy a Swarm cluster in AWS.
 All the following commands must be executed in a Swarm Manager node.
 
 First, we will create the [overlay network](https://docs.docker.com/network/overlay/) that Traefik
-will use to distribute the load across the entire Cluster. We are naming this network `webgateway`,
+will use to distribute the load across the entire Cluster. We are naming this network `traefik-net`,
 but feel free to give it the name you want. Just remember to change the name in the compose file too.
 
 ```
-docker network create -d overlay webgateway
+docker network create -d overlay traefik-net
 ```
 
 Clone this repository and deploy the stack specifying the domain to use for Traefik rules.
