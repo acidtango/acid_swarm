@@ -71,6 +71,9 @@ services:
         reservations:
           cpus: '0.15'
           memory: 256M
+      placement:
+        constraints:
+          - node.role == manager
 
   swarmpit_agent:
     image: swarmpit/agent:2.0
