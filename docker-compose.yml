@@ -95,6 +95,16 @@ services:
           cpus: '0.05'
           memory: 32M
 
+  cluster_cleanup:
+    image: docker
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: docker system prune --all --force
+    deploy:
+      mode: global
+      restart_policy:
+        delay: 24h
+
 networks:
   net:
     driver: overlay
