@@ -32,7 +32,7 @@ services:
         condition: on-failure
 
   swarmpit:
-    image: swarmpit/swarmpit:1.6
+    image: swarmpit/swarmpit:1.7
     environment:
       - SWARMPIT_DB=http://swarmpit_db:5984
     volumes:
@@ -76,7 +76,7 @@ services:
           - node.role == manager
 
   swarmpit_agent:
-    image: swarmpit/agent:2.0
+    image: swarmpit/agent:2.1
     environment:
       - EVENT_ENDPOINT=http://swarmpit:8080/events
       - HEALTH_CHECK_ENDPOINT=http://swarmpit:8080/version
@@ -87,6 +87,8 @@ services:
       - net
     deploy:
       mode: global
+      labels:
+        swarmpit.agent: 'true'
       resources:
         limits:
           cpus: '0.10'
