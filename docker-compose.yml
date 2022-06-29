@@ -1,17 +1,15 @@
 version: "3.3"
 services:
   traefik:
-    image: traefik:1.7.9
+    image: traefik:2.7
     command:
       - "--api"
-      - "--entrypoints=Name:http Address::80"
-      - "--defaultentrypoints=http"
-      - "--docker"
-      - "--docker.swarmMode"
-      - "--docker.domain=${DOMAIN_NAME}"
-      - "--docker.watch"
+      - "--entrypoints.http.address=:80"
+      - "--providers.docker"
+      - "--providers.docker.swarmmode"
+      - "--providers.docker.exposedbydefault=false"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - traefik-net
     ports:
@@ -20,7 +18,8 @@ services:
       labels:
         traefik.enable: 'true'
         traefik.docker.network: traefik-net
-        traefik.frontend.rule: "Host:traefik.${DOMAIN_NAME}"
+        traefik.http.routers.traefik-http-router.rule: Host(`traefik.${DOMAIN_NAME}`)
+        traefik.http.routers.traefik-http-router.entrypoints: http
         traefik.port: 8080
       placement:
         constraints:
@@ -32,9 +31,10 @@ services:
         condition: on-failure
 
   swarmpit:
-    image: swarmpit/swarmpit:1.7
+    image: swarmpit/swarmpit:1.9
     environment:
       - SWARMPIT_DB=http://swarmpit_db:5984
+      - SWARMPIT_INFLUXDB=http://swarmpit_influxdb:8086
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
@@ -44,7 +44,8 @@ services:
       labels:
         traefik.enable: 'true'
         traefik.docker.network: traefik-net
-        traefik.frontend.rule: "Host:swarmpit.${DOMAIN_NAME}"
+        traefik.http.routers.swarmpit-http-router.rule: Host(`swarmpit.${DOMAIN_NAME}`)
+        traefik.http.routers.swarmpit-http-router.entrypoints: http
         traefik.port: 8080
       resources:
         limits:
@@ -75,8 +76,28 @@ services:
         constraints:
           - node.role == manager
 
+  swarmpit_influxdb:
+    image: influxdb:1.7
+    volumes:
+     - influx-data:/var/lib/influxdb
+    networks:
+     - net
+    logging:
+      driver: json-file
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.3'
+          memory: 128M
+        limits:
+          cpus: '0.6'
+          memory: 512M
+      placement:
+        constraints:
+          - node.role == manager
+
   swarmpit_agent:
-    image: swarmpit/agent:2.1
+    image: swarmpit/agent:2.2
     environment:
       - EVENT_ENDPOINT=http://swarmpit:8080/events
       - HEALTH_CHECK_ENDPOINT=http://swarmpit:8080/version
@@ -116,4 +137,6 @@ networks:
 
 volumes:
   db-data:
+    driver: local
+  influx-data:
     driver: local
